@@ -16,7 +16,9 @@ java {
 kotlin {
     if (abiCheckEnabled) {
         @OptIn(ExperimentalAbiValidation::class)
-        abiValidation { }
+        abiValidation {
+            enabled = true
+        }
     }
 
     jvm {
@@ -36,6 +38,7 @@ kotlin {
         // Tier 2
         linuxArm64()
         watchosSimulatorArm64()
+        watchosArm32()
         watchosArm64()
         tvosSimulatorArm64()
         tvosArm64()
@@ -58,7 +61,6 @@ kotlin {
         }
     }
     js {
-        @Suppress("DEPRECATION", "DEPRECATION_ERROR") // KT-68597, KT-68597
         outputModuleName = project.name
         nodejs()
     }
@@ -66,7 +68,6 @@ kotlin {
     wasmJs {
         // Module name should be different from the one from JS
         // otherwise IC tasks that start clashing different modules with the same module name
-        @Suppress("DEPRECATION", "DEPRECATION_ERROR") // KT-68597, KT-68597
         outputModuleName = project.name + "Wasm"
         nodejs()
     }
