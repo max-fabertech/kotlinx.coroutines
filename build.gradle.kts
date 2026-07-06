@@ -159,3 +159,23 @@ if (isSnapshotTrainEnabled(rootProject)) {
     // Report Kotlin compiler version when building project
     println("Using Kotlin compiler version: ${KotlinCompilerVersion.VERSION}")
 }
+
+allprojects {
+    repositories {
+        maven("https://packages.jetbrains.team/maven/p/kt/dev")
+    }
+
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        println("Project: $name")
+
+        extensions.configure<KotlinMultiplatformExtension> {
+            sourceSets.configureEach {
+                dependencies {
+                    implementation("org.jetbrains.kotlin.commonizer:commonizer-support-library:2.4.20-dev-8851")
+                }
+            }
+
+            compilerOptions.freeCompilerArgs.add("-Xskip-prerelease-check")
+        }
+    }
+}
