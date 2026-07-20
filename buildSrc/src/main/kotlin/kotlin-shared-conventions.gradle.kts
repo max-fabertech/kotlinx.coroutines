@@ -1,14 +1,8 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.kotlin.dsl.invoke
-import org.gradle.kotlin.dsl.withType
+import org.gradle.api.tasks.testing.logging.*
 import org.jetbrains.kotlin.gradle.dsl.*
-import org.jetbrains.kotlin.gradle.dsl.abi.AbiValidationExtension
-import org.jetbrains.kotlin.gradle.dsl.abi.AbiValidationMultiplatformExtension
-import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.targets.jvm.*
+import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
-import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
-import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
 private fun KotlinCommonCompilerOptions.configureGlobalKotlinArgumentsAndOptIns() {
     freeCompilerArgs.addAll("-progressive")
@@ -30,13 +24,24 @@ extensions.configure<JavaPluginExtension> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+fun KotlinBaseExtension.enableAbiValidation() {
+    val oldAbiValidation = extensions.findByName("abiValidation")
+    if (oldAbiValidation != null) {
+        oldAbiValidation.withGroovyBuilder {
+            setProperty("enabled", true)
+        }
+    } else {
+        withGroovyBuilder {
+            // enable by invoke `abiValidation()` function
+            "abiValidation"()
+        }
+    }
+}
+
 plugins.withId("org.jetbrains.kotlin.jvm") {
     extensions.configure<KotlinJvmProjectExtension> {
         if (abiCheckEnabled) {
-            extensions.configure<AbiValidationExtension> {
-                @OptIn(ExperimentalAbiValidation::class)
-                enabled = true
-            }
+            enableAbiValidation()
         }
         compilerOptions {
             jvmTarget = JvmTarget.JVM_1_8
@@ -59,10 +64,7 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
 plugins.withId("org.jetbrains.kotlin.multiplatform") {
     extensions.configure<KotlinMultiplatformExtension> {
         if (abiCheckEnabled) {
-            extensions.configure<AbiValidationMultiplatformExtension> {
-                @OptIn(ExperimentalAbiValidation::class)
-                enabled = true
-            }
+            enableAbiValidation()
         }
         jvm {
             compilations.all {
@@ -80,7 +82,6 @@ plugins.withId("org.jetbrains.kotlin.multiplatform") {
         // Tier 2
         linuxArm64()
         watchosSimulatorArm64()
-        watchosArm32()
         watchosArm64()
         tvosSimulatorArm64()
         tvosArm64()
@@ -166,7 +167,7 @@ plugins.withId("org.jetbrains.kotlin.multiplatform") {
      * an explicit automatic module name has to be specified in the manifest for metadata jars.
      */
     tasks.named("allMetadataJar", Jar::class) {
-        val moduleName =  project.name.replace("-", ".") + ".artifact_disambiguating_module"
+        val moduleName = project.name.replace("-", ".") + ".artifact_disambiguating_module"
         manifest {
             attributes("Automatic-Module-Name" to moduleName)
         }
